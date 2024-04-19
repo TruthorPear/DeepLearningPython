@@ -19,6 +19,13 @@ import random
 # Third-party libraries
 import numpy as np
 
+# Standard scientific Python imports
+import matplotlib.pyplot as plt
+
+# Import datasets, classifiers and performance metrics
+from sklearn import datasets, metrics, svm
+from sklearn.model_selection import train_test_split
+
 class Network(object):
 
     def __init__(self, sizes):
@@ -69,10 +76,41 @@ class Network(object):
                 for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
-            if test_data:
+            #Testing stuff
+            mini_batch_length = len(mini_batches)
+            if test_data: #We need to add information about each class of each epoch here
                 print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
+                #we also need the number of *incorrectly* classified images for this
+                #bro, can't we just say 'self.evaluate(test_data)-n_test' to get the incorrect ones?
+                #do we need a for loop?
+                for x in range(mini_batch_size):
+                    #maybe we need to add up the total (in)correct images in each mini batch for the evaluate function?
+                    class_size = int(n/mini_batch_size) #size of each class
+                    class_mini_batch_size = int(class_size/10) #number of mini batches that make up a class
+                    exact_class_size = len(mini_batches[x:class_mini_batch_size+x])
+                    print(mini_batches.shape)
+                    print(test_data.shape)
+                    #class_x = mini_batches[x:class_mini_batch_size, 0:9] #each class is 500 or so mini batches of 10 images, with x,y in each
+                    print("class {} : {} / {}".format(x,self.evaluate(test_data),exact_class_size)) #how do we evaluate the accuracy of a specific class?
+                #we need to expose the specifics of each of these mini batches
+                #we need the number of images in each class to put in here b/c I really don't think that 10 is correct
+                #also I think the length of the last class in an epoch is a little under 5k. How do I get the exact size for each class?
+                #len()
             else:
                 print("Epoch {} complete".format(j))
+            if j==19:
+                """_, axes = plt.subplots(nrows=1, ncols=10, figsize=(10, 3)) #we're printing the ten incorrect in epoch 19
+                for ax, image, prediction, expected in zip(axes, X_test, predicted, y_test): #maybe we need to change something here... the actual stuff!
+                #if (i in prediction != i in y_test): #how do I compare these two??
+                    ax.set_axis_off() #which two sets are we comparing here? 
+                    image = image.reshape(8, 8) #we're comparing what we're guessing at with an actual display image and zipping them together
+                    ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
+                    ax.set_title(f"Prediction: {prediction}\nActual: {expected}")""" #add this to show what the actual value was (incorrect)
+
+        #This is where we need to print epoch 19's first incorrect image from each class
+        #How do we know what the first incorrect one is?
+        #Where would we save that info? Should we do it right here, or in the printing section? 
+
 
     def update_mini_batch(self, mini_batch, eta):
         """Update the network's weights and biases by applying
@@ -133,6 +171,19 @@ class Network(object):
         test_results = [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in test_data]
         return sum(int(x == y) for (x, y) in test_results)
+
+
+    def evaluate_batches(self, test_data): #we need this to check each set of mini batches
+        """Return the number of test inputs for which the neural
+        network outputs the correct result. Note that the neural
+        network's output is assumed to be the index of whichever
+        neuron in the final layer has the highest activation."""
+        test_results = [(np.argmax(self.feedforward(x)), y)
+                        for (x, y) in test_data]
+        return sum(int(x != y) for (x, y) in test_results) #gets incorrect amount
+    
+    def get_first_incorrect(): #we're gonna use this to print the incorrect images
+        return 0
 
     def cost_derivative(self, output_activations, y):
         """Return the vector of partial derivatives \partial C_x /
